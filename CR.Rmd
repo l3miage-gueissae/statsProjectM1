@@ -1,27 +1,41 @@
 ---
-title: " Statistiques parties d'Échec"
-output: html_document
+title: "Statistiques des Parties d'Échecs"
+output: pdf_document
 date: "2023-05-05"
-author: "GUEISSAZ - FOURNIER"
+author: 
+- Emmanuel GUEISSAZ
+- Quentin FOURNIER
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+chess_games_datas <- read.csv("chess_games_format.csv", header=TRUE, sep=';') 
 ```
-#Note de cours
-Faire moyen et variance et on est bien ? (cours)
 
-intervale de confiance dépend de la taille de l'échantillions / le risque
-loi gaussienne
-#fin note de cours
 
-## Description jeu de données
-Ce jeu de données contient des informations sur une vaste gamme de parties d'échecs en ligne.
-Le fichier contient 20058 partie d'échec dont l'individu est la partie.
-Les deux variables quantitative que nous choisissons sont :
+
+\newpage
+# Introduction
+
+## Origine
+&nbsp;&nbsp;&nbsp;&nbsp;Le jeu de données utilisé dans cette étude statistique 
+provient du site www.kaggle.com. Vous pouvez le trouver en suivant le lien 
+suivant : https://www.kaggle.com/datasets/ulrikthygepedersen/online-chess-games.
+
+## Description
+&nbsp;&nbsp;&nbsp;&nbsp;Ce jeu de données contient des informations sur une 
+vaste gamme de parties d'échecs en ligne. Le fichier contient 20058 parties 
+d'échecs dont l'individu est la partie.
+\newline
+\newline
+&nbsp;&nbsp;&nbsp;&nbsp;Les deux variables quantitatives que nous choisissons 
+sont :
 
 * Le nombre de tours qui est une variable discrète
-* Le classement du vainqueur dont la différence entre son adversaire est inférieur a 100, cette variable est continue.
+* Le classement du vainqueur dont la différence de rang entre lui et son 
+adversaire est inférieur a 100, cette variable est continue.
+
 #faire une description de ces unités
 
 Les deux variables qualitatives que nous choisissons sont :
@@ -29,18 +43,11 @@ Les deux variables qualitatives que nous choisissons sont :
 * La couleur du vainqueur
 * L'ouverture
 
+## Analyses
+### Analyse univarié
 
-
-```{r cars}
-summary(cars)
+```{r setup, include=FALSE}
+moyenne_turns <- mean(chess_games_datas$turns)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Analyse multivarié
