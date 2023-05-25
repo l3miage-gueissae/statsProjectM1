@@ -1,0 +1,46 @@
+---
+title: " Statistiques parties d'Échec"
+output: html_document
+date: "2023-05-05"
+author: "GUEISSAZ - FOURNIER"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Note de cours
+Faire moyen et variance et on est bien ? (cours)
+
+intervale de confiance dépend de la taille de l'échantillions / le risque
+loi gaussienne
+#fin note de cours
+
+## Description jeu de données
+Ce jeu de données contient des informations sur une vaste gamme de parties d'échecs en ligne.
+Le fichier contient 20058 partie d'échec dont l'individu est la partie.
+Les deux variables quantitative que nous choisissons sont :
+
+* Le nombre de tours qui est une variable discrète
+* Le classement du vainqueur dont la différence entre son adversaire est inférieur a 100, cette variable est continue.
+#faire une description de ces unités
+
+Les deux variables qualitatives que nous choisissons sont :
+
+* La couleur du vainqueur
+* L'ouverture
+
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
