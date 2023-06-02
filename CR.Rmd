@@ -1,21 +1,21 @@
 ---
-title: "Statistiques des Parties d'Échecs"
-output: pdf_document
+title: "Analyse statistique des parties d'échecs en ligne"
+output: "pdf_document"
 date: "2023-05-05"
 author: 
-- Emmanuel GUEISSAZ
-- Quentin FOURNIER
+- "Emmanuel GUEISSAZ"
+- "Quentin FOURNIER"
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
 
-chess_games_datas <- read.csv("chess_games_format.csv", header=TRUE, sep=';') 
+chess_games_datas <- read.csv("chess_games_format.csv", header=TRUE, sep=';')
 ```
-
-
-
 \newpage
+
+
 # Introduction
 
 ## Origine
@@ -23,31 +23,202 @@ chess_games_datas <- read.csv("chess_games_format.csv", header=TRUE, sep=';')
 provient du site www.kaggle.com. Vous pouvez le trouver en suivant le lien 
 suivant : https://www.kaggle.com/datasets/ulrikthygepedersen/online-chess-games.
 
+
 ## Description
-&nbsp;&nbsp;&nbsp;&nbsp;Ce jeu de données contient des informations sur une 
-vaste gamme de parties d'échecs en ligne. Le fichier contient 20058 parties 
-d'échecs dont l'individu est la partie.
-\newline
-\newline
-&nbsp;&nbsp;&nbsp;&nbsp;Les deux variables quantitatives que nous choisissons 
-sont :
+&nbsp;&nbsp;&nbsp;&nbsp;
+Ce jeu de données contient des informations sur une vaste gamme de parties 
+d'échecs en ligne. Le fichier contient les informations de 20058 parties dont 
+l'individu est la partie.
 
-* Le nombre de tours qui est une variable discrète
-* Le classement du vainqueur dont la différence de rang entre lui et son 
-adversaire est inférieur a 100, cette variable est continue.
+&nbsp;&nbsp;&nbsp;&nbsp;
+Les échecs sont un jeu de plateau stratégique pour deux joueurs. Il se joue sur 
+un plateau divisé en cases carrées et composé de 64 cases au total, alternant 
+entre les couleurs claires (généralement blanc) et foncées (généralement noir). 
+Chaque joueur dispose d'un ensemble de 16 pièces, comprenant un roi, une dame, 
+deux tours, deux fous, deux cavaliers et huit pions.
 
-#faire une description de ces unités
+&nbsp;&nbsp;&nbsp;&nbsp;
+L'objectif du jeu est de mettre le roi de l'adversaire en échec et mat, ce qui 
+signifie qu'il est attaqué sans possibilité d'échapper à la capture. Les joueurs 
+déplacent leurs pièces de manière alternée, en utilisant des stratégies 
+tactiques et des mouvements spécifiques pour attaquer les pièces adverses, 
+défendre les leurs et contrôler le plateau.
 
-Les deux variables qualitatives que nous choisissons sont :
+&nbsp;&nbsp;&nbsp;&nbsp;
+Chaque pièce a des règles de mouvement spécifiques. Par exemple, la tour se 
+déplace horizontalement ou verticalement sur le plateau, le fou se déplace en 
+diagonale, le cavalier effectue des mouvements en forme de L, tandis que la 
+reine peut se déplacer dans toutes les directions sur le plateau.
 
-* La couleur du vainqueur
-* L'ouverture
+&nbsp;&nbsp;&nbsp;&nbsp;
+Le jeu d'échecs est apprécié à la fois comme un loisir et comme un sport 
+intellectuel. Il exige une réflexion stratégique, la prévision des coups de 
+l'adversaire et la capacité de planifier des séquences de coups. Les échecs sont 
+joués à différents niveaux de compétence, du niveau amateur au niveau 
+professionnel, avec des tournois organisés à l'échelle mondiale.
 
-## Analyses
-### Analyse univarié
+&nbsp;&nbsp;&nbsp;&nbsp;
+Dans le cadre de cette analyse statistique des parties d'échecs en ligne, nous 
+allons examiner les données pour comprendre les schémas de jeu, les performances 
+des joueurs et les facteurs qui peuvent influencer les résultats des parties.
 
-```{r setup, include=FALSE}
-moyenne_turns <- mean(chess_games_datas$turns)
+### Variables quantitatives
+
+Nombre de tours d'une partie
+
+- Cette variable dicrète représente le nombre de tours joués lors d'une partie d'échecs 
+en ligne.
+- Elle est mesurée en termes de la quantité d'échanges de coups entre les 
+joueurs.
+- Cette variable permet d'évaluer la durée et la complexité d'une partie.
+
+Classement du vainqueur
+
+- Cette variable continue indique le classement du vainqueur d'une partie d'échecs en 
+ligne.
+- Plus elle est haute, plus le joueur est censé être bon.
+- Le classement permet de déterminer la performance des joueurs.
+
+### Variables qualitatives
+
+Couleur du vainqueur
+
+- Cette variable représente la couleur (withe (blanc) ou black (noir)) du joueur 
+qui remporte la partie.
+
+Partie classée ou non
+
+- Cette variable indique si une partie est classée ou non.
+- Une partie classée est généralement enregistrée dans un système de classement 
+officiel, tandis qu'une partie non classée est jouée à des fins de pratique ou 
+de divertissement.
+\newpage
+
+
+# Analyses
+## Analyse univariée
+### Exploration statistique
+
+Les analyses statistiques effectuées sur les parties d'échecs en ligne révèlent 
+les résultats suivants :
+
+```{r analyse_tours, echo=FALSE}
+moyenne_turns <- round(mean(chess_games_datas$turns), 2)
+variance_turns <- round(var(chess_games_datas$turns), 2)
 ```
 
-### Analyse multivarié
+- La moyenne du nombre de tours réalisés dans chaque partie est de 
+`r moyenne_turns` tours.
+- La variance du nombre de tours réalisés dans chaque partie est de 
+`r variance_turns`.
+```{r analyse_classement, echo=FALSE}
+chess_games_datas$winClassement <- ifelse(chess_games_datas$winner == "White",
+                                          chess_games_datas$white_rating,
+                                          chess_games_datas$black_rating)
+
+moyenne_classement <- round(mean(chess_games_datas$winClassement), 2)
+variance_classement <- round(var(chess_games_datas$winClassement), 2)
+```
+- La moyenne des classements des partie est de `r moyenne_classement`.
+- La variance des rangs est de `r variance_classement`.
+
+
+### Distribution normale
+```{r gauss_tours, echo=FALSE, fig.height=4.2}
+plot.new()
+par(mfrow = c(1, 2))
+hist(chess_games_datas$turns, 
+     main = "Distribution du nombre\nde tours par partie", 
+     xlab = "Nombre de tours", ylab = "Fréquence", prob = TRUE)
+curve(dnorm(x, mean = mean(chess_games_datas$turns), 
+            sd = sd(chess_games_datas$turns)), 
+      add = TRUE, col = "red", lwd = 2)
+
+hist(chess_games_datas$winClassement, 
+     main = "Distribution du classement du vainqueur", 
+     xlab = "Classement", ylab = "Fréquence", prob = TRUE)
+curve(dnorm(x, mean = mean(chess_games_datas$winClassement), 
+            sd = sd(chess_games_datas$winClassement)), 
+      add = TRUE, col = "red", lwd = 2)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+En examinant l'histogramme du nombre de tours par partie et la courbe rouge représentant la distribution normale, on peut observer une certaine similarité entre les deux. La courbe rouge semble suivre approximativement la forme de l'histogramme, suggérant une possible adéquation à une distribution normale.
+
+### Tests de confiance
+```{r test_tours, echo=FALSE}
+interval_turns=t.test(chess_games_datas$turns, conf.level = 0.95)
+#interval$conf.int
+```
+
+```{r test_classement, echo=FALSE}
+interval_rank=t.test(chess_games_datas$winClassement, conf.level = 0.95)
+#interval$conf.int
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Les tests de confiance ont été réalisés pour évaluer les intervalles de 
+confiance des variables quantitatives étudiées. Voici les résultats obtenus :
+
+- Nombre de tours : L'intervalle de confiance à 95 % pour le nombre de tours 
+réalisés dans chaque partie est de `r interval_turns$conf.int[1]` à 
+`r interval_turns$conf.int[2]`. Cela signifie qu'avec un niveau de confiance de 
+95 %, on peut estimer que la moyenne réelle du nombre de tours dans la 
+population se situe entre `r interval_turns$conf.int[1]` et 
+`r interval_turns$conf.int[2]`.
+
+- Classement du vainqueur : L'intervalle de confiance à 95 % pour le classement 
+du vainqueur est de `r interval_rank$conf.int[1]` à 
+`r interval_rank$conf.int[2]`. Cela signifie qu'avec un niveau de confiance de 
+95 %, on peut estimer que la moyenne réelle du classement du vainqueur dans la 
+population se situe entre `r interval_rank$conf.int[1]` et 
+`r interval_rank$conf.int[2]`.
+
+### Analyse de la proportion de vainqueur par couleur
+
+```{r test_winner, echo=FALSE}
+prop_blanc <- sum(chess_games_datas$winner == "White") / length(chess_games_datas$winner)
+prop_noir <- sum(chess_games_datas$winner == "Black") / length(chess_games_datas$winner)
+
+ci_blanc <- round(prop.test(sum(chess_games_datas$winner == "White"), length(chess_games_datas$winner))$conf.int, 2)
+ci_noir <- round(prop.test(sum(chess_games_datas$winner == "Black"), length(chess_games_datas$winner))$conf.int, 2)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Les résultats de l'analyse indiquent que l'intervalle de confiance à 95% pour la proportion de vainqueurs blancs est de ```r ci_blanc[1]``` à ```r ci_blanc[2]```, tandis que l'intervalle de confiance à 95% pour la proportion de vainqueurs noirs est de ```r ci_noir[1]``` à ```r ci_noir[2]```. On en déduit donc que les blancs gagnent plus souvent les parties d'échec en ligne.
+
+## Analyse multivarié
+
+Nombres de tours par rapport à la couleur du vaincueur
+
+```{r, include=TRUE}
+mean_turns <- aggregate(turns ~ winner, data = chess_games_datas, FUN = mean)
+barplot(mean_turns$turns, names.arg = mean_turns$winner, xlab = "Couleur du vainqueur",
+        ylab = "Nombre moyen de tours", main = "Nombre moyen de tours par couleur de vainqueur",
+        col = c("skyblue", "lightgreen"))
+```
+
+```{r, include=TRUE}
+b_turns <- aggregate(turns ~ rated, data = chess_games_datas, FUN = mean)
+# Arrondir les valeurs à deux chiffres après la virgule
+b_turns$turns <- round(b_turns$turns, 2)
+
+barplot(b_turns$turns, names.arg = b_turns$rated, xlab = "rated",
+        ylab = "Nrateds", main = "rated",
+        col = c("skyblue", "lightgreen"))
+
+# Calculer la position du texte à l'intérieur de chaque barre
+text_pos <- barplot(b_turns$turns, plot = FALSE)
+
+# Ajouter le texte arrondi à l'intérieur des barres
+text(x = text_pos, y = b_turns$turns, labels = b_turns$turns, pos = 1, offset = 0.5)
+
+
+```
+
+```{r, include=TRUE}
+c_turns <- aggregate(winClassement ~ winner, data = chess_games_datas, FUN = mean)
+barplot(c_turns$winClassement, names.arg = c_turns$winner, xlab = "xxxxx",
+        ylab = "xxxxx", main = "Nxxxxx",
+        col = c("skyblue", "lightgreen"))
+```
