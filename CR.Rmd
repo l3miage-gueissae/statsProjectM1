@@ -10,6 +10,12 @@ author:
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(polycor)
+library(knitr)
+
+
 
 chess_games_datas <- read.csv("chess_games_format.csv", header=TRUE, sep=';')
 ```
@@ -62,6 +68,16 @@ Dans le cadre de cette analyse statistique des parties d'échecs en ligne, nous
 allons examiner les données pour comprendre les schémas de jeu, les performances 
 des joueurs et les facteurs qui peuvent influencer les résultats des parties.
 
+## Questions intéressantes :
+
+- Y a-t-il une association entre le classement du vainqueur et le nombre de tours joués dans une partie d'échecs ?
+- Est-ce que le classement du vainqueur influence le nombre de tours joués dans une partie ?
+- Est-ce que la couleur impacte directement le résultat de la partie ?
+
+## Nettoyage des données
+
+Nous n'avons pas rencontré de problème avec les données, il ne nous a pas semblé pertinent de faire un nettoyage.
+
 ### Variables quantitatives
 
 Nombre de tours d'une partie
@@ -92,12 +108,34 @@ Partie classée ou non
 - Une partie classée est généralement enregistrée dans un système de classement 
 officiel, tandis qu'une partie non classée est jouée à des fins de pratique ou 
 de divertissement.
-\newpage
-
 
 # Analyses
 ## Analyse univariée
 ### Exploration statistique
+#### Qualitatives
+
+```{r , echo=FALSE, fig.width=10}
+
+par(mfrow = c(1, 2))
+winner_counts <- table(chess_games_datas$winner)
+
+# Créer un vecteur de couleurs personnalisées
+colors <- c("lightgreen", "lightblue", "orange")
+
+# Créer le diagramme en camembert avec les couleurs et les labels appropriés
+pie(winner_counts, col = colors, labels = c("Black", "Draw", "White"), main = "Répartition des gagnants", cex = 1.5)
+
+# Compter les occurrences des valeurs dans la variable "rated"
+rated_counts <- table(chess_games_datas$rated)
+
+# Créer le diagramme en camembert avec les couleurs et les labels appropriés
+pie(rated_counts, col = c("lightgreen", "orange"), labels = c("Non classé", "Classé"), main = "Répartition des parties", cex = 1.5)
+```
+
+- On remarque les blancs gagnent un peu plus souvent,
+- On remarque aussi que la plupart des parties sont en mode classé.
+
+#### Quantitatives
 
 Les analyses statistiques effectuées sur les parties d'échecs en ligne révèlent 
 les résultats suivants :
@@ -129,14 +167,16 @@ plot.new()
 par(mfrow = c(1, 2))
 hist(chess_games_datas$turns, 
      main = "Distribution du nombre\nde tours par partie", 
-     xlab = "Nombre de tours", ylab = "Fréquence", prob = TRUE)
+     xlab = "Nombre de tours", ylab = "Fréquence", prob = TRUE,
+     col = "lightgreen", border = "black")
 curve(dnorm(x, mean = mean(chess_games_datas$turns), 
             sd = sd(chess_games_datas$turns)), 
       add = TRUE, col = "red", lwd = 2)
 
 hist(chess_games_datas$winClassement, 
-     main = "Distribution du classement du vainqueur", 
-     xlab = "Classement", ylab = "Fréquence", prob = TRUE)
+     main = "Distribution du classement\ndu vainqueur", 
+     xlab = "Classement", ylab = "Fréquence", prob = TRUE,
+     col = "lightgreen", border = "black")
 curve(dnorm(x, mean = mean(chess_games_datas$winClassement), 
             sd = sd(chess_games_datas$winClassement)), 
       add = TRUE, col = "red", lwd = 2)
@@ -161,18 +201,18 @@ Les tests de confiance ont été réalisés pour évaluer les intervalles de
 confiance des variables quantitatives étudiées. Voici les résultats obtenus :
 
 - Nombre de tours : L'intervalle de confiance à 95 % pour le nombre de tours 
-réalisés dans chaque partie est de `r interval_turns$conf.int[1]` à 
-`r interval_turns$conf.int[2]`. Cela signifie qu'avec un niveau de confiance de 
+réalisés dans chaque partie est de `r round(interval_turns$conf.int[1], 2)` à 
+`r round(interval_turns$conf.int[2], 2)`. Cela signifie qu'avec un niveau de confiance de 
 95 %, on peut estimer que la moyenne réelle du nombre de tours dans la 
-population se situe entre `r interval_turns$conf.int[1]` et 
-`r interval_turns$conf.int[2]`.
+population se situe entre `r round(interval_turns$conf.int[1], 2)` et 
+`r round(interval_turns$conf.int[2], 2)`.
 
 - Classement du vainqueur : L'intervalle de confiance à 95 % pour le classement 
-du vainqueur est de `r interval_rank$conf.int[1]` à 
-`r interval_rank$conf.int[2]`. Cela signifie qu'avec un niveau de confiance de 
+du vainqueur est de `r round(interval_rank$conf.int[1], 2)` à 
+`r round(interval_rank$conf.int[2], 2)`. Cela signifie qu'avec un niveau de confiance de 
 95 %, on peut estimer que la moyenne réelle du classement du vainqueur dans la 
-population se situe entre `r interval_rank$conf.int[1]` et 
-`r interval_rank$conf.int[2]`.
+population se situe entre `r round(interval_rank$conf.int[1], 2)` et 
+`r round(interval_rank$conf.int[2], 2)`.
 
 ### Analyse de la proportion de vainqueur par couleur
 
@@ -189,36 +229,132 @@ Les résultats de l'analyse indiquent que l'intervalle de confiance à 95% pour 
 
 ## Analyse multivarié
 
-Nombres de tours par rapport à la couleur du vaincueur
+### Quantitative x Qualitative
 
-```{r, include=TRUE}
-mean_turns <- aggregate(turns ~ winner, data = chess_games_datas, FUN = mean)
-barplot(mean_turns$turns, names.arg = mean_turns$winner, xlab = "Couleur du vainqueur",
-        ylab = "Nombre moyen de tours", main = "Nombre moyen de tours par couleur de vainqueur",
-        col = c("skyblue", "lightgreen"))
-```
+```{r, echo=FALSE}
+mean_black <- mean(chess_games_datas$turns[chess_games_datas$winner == "Black"])
+mean_white <- mean(chess_games_datas$turns[chess_games_datas$winner == "White"])
+mean_draw <- mean(chess_games_datas$turns[chess_games_datas$winner == "Draw"])
 
-```{r, include=TRUE}
-b_turns <- aggregate(turns ~ rated, data = chess_games_datas, FUN = mean)
-# Arrondir les valeurs à deux chiffres après la virgule
-b_turns$turns <- round(b_turns$turns, 2)
+graph_couleur_tours <- ggplot() +
+  geom_bar(stat = "identity", aes(x = c("Black", "White", "Draw"), y = c(mean_black, mean_white, mean_draw)), fill = c("orange", "lightblue", "lightgreen")) +
+  labs(x = "Couleur du gagnant", y = "Nombre moyen de tours", fill = "Couleur du gagnant") +
+  ggtitle("Nombre moyen de tours lors d'une victoire par couleur") +
+  geom_text(aes(x = c("Black", "White", "Draw"), y = c(mean_black, mean_white, mean_draw), label = round(c(mean_black, mean_white, mean_draw), 2)), vjust = 3) +
 
-barplot(b_turns$turns, names.arg = b_turns$rated, xlab = "rated",
-        ylab = "Nrateds", main = "rated",
-        col = c("skyblue", "lightgreen"))
+  theme(panel.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(color = "black", linetype = "dotted"),
+        panel.grid.minor = element_blank())
 
-# Calculer la position du texte à l'intérieur de chaque barre
-text_pos <- barplot(b_turns$turns, plot = FALSE)
+print(graph_couleur_tours)
 
-# Ajouter le texte arrondi à l'intérieur des barres
-text(x = text_pos, y = b_turns$turns, labels = b_turns$turns, pos = 1, offset = 0.5)
-
+#kruskal.test(turns ~ winner, data = chess_games_datas)
 
 ```
 
-```{r, include=TRUE}
-c_turns <- aggregate(winClassement ~ winner, data = chess_games_datas, FUN = mean)
-barplot(c_turns$winClassement, names.arg = c_turns$winner, xlab = "xxxxx",
-        ylab = "xxxxx", main = "Nxxxxx",
-        col = c("skyblue", "lightgreen"))
+&nbsp;&nbsp;&nbsp;&nbsp;
+Nous observons que la moyenne du nombre de tours pour les parties remportées par les blancs est de 60.72 tours, tandis que pour les parties remportées par les noirs, la moyenne est de 57.79 tours. En ce qui concerne les parties déclarées comme une égalité, la moyenne du nombre de tours est de 86.16 tours.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Le test t-test est généralement utilisé pour comparer les moyennes de deux groupes. Cependant, dans notre cas, la variable "winner" a trois niveaux distincts : "Black", "Draw" et "White". Le t-test ne peut pas être appliqué directement car il ne permet de comparer que deux groupes à la fois. Par conséquent, nous utilisons le test de Kruskal-Wallis, qui est un test non paramétrique adapté à notre situation. Le test de Kruskal-Wallis nous permet de comparer les distributions des variables "turns" entre les différents niveaux de la variable "winner" et de déterminer s'il y a des différences significatives entre ces groupes.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Le test de Kruskal-Wallis a produit une statistique de test (chi-carré) de 397.68 avec 2 degrés de liberté. La valeur de p associée est inférieure à 2.2e-16, ce qui indique une différence significative entre les médianes des "turns" pour les différentes catégories de la variable "winner".
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Cela suggère qu'il existe une corrélation significative entre la couleur du vainqueur et le nombre de tours joués dans la partie. Cependant, il ne permet pas d'identifier quelles paires de groupes diffèrent significativement les unes des autres.
+
+
+### Qualitative x Qualitative
+```{r, echo=FALSE}
+# Création de la table de contingence
+
+cont_table_rated_winner <- prop.table(table(chess_games_datas$rated, chess_games_datas$winner))
+colnames(cont_table_rated_winner) <- c("Black", "Draw", "White")
+rownames(cont_table_rated_winner) <- c("Non classé", "Classé")
+
+kable(cont_table_rated_winner, caption = "Tableau des fréquences relatives de la couleur du vainqueur selon la classification de la partie")
+
+
+chess_games_datas$winner <- as.factor(chess_games_datas$winner)
+chess_games_datas$rated <- as.factor(chess_games_datas$rated)
+
+cont_table <- table(chess_games_datas$winner, chess_games_datas$rated)
+resultat_test <- chisq.test(cont_table)
+
 ```
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Parmi les parties non classées, on observe que 8.59% ont été remportées par les joueurs noirs, 1.15% se sont terminées par une égalité et 9.72% ont été remportées par les joueurs blancs.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Parmi les parties classées, 36.81% ont été remportées par les joueurs noirs, 3.58% se sont terminées par une égalité et 40.14% ont été remportées par les joueurs blancs.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+On peut remarquer que les proportions de victoires diffèrent entre les parties classées et non classées. Les parties classées semblent présenter un pourcentage plus élevé de victoires pour les joueurs blancs, tandis que les parties non classées montrent une distribution plus équilibrée.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Le test du chi carré a été utilisé pour évaluer l'association entre la variable "Couleur du vainqueur" (Black, Draw, White) et la variable "Partie classée" (Non classé, Classé) dans notre jeu de données.
+
+```{r, echo=FALSE}
+print(resultat_test)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Les résultats du test indiquent une statistique de test (X-squared) de 15.995 avec 2 degrés de liberté, ce qui correspond à un niveau de significativité de p = 0.0003363.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Cette analyse met en évidence une association statistiquement significative entre la couleur du vainqueur et le fait que la partie soit classée ou non. Autrement dit, la couleur du vainqueur et le statut de la partie semblent être liés d'une manière non aléatoire.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Ces résultats suggèrent que la classification des parties et la couleur du vainqueur sont des variables importantes à prendre en compte lors de l'analyse des jeux d'échecs. Cela pourrait avoir des implications pour la stratégie de jeu et les performances des joueurs.
+
+### Quantitative x Quantitative
+
+```{r, echo=FALSE}
+par(mfrow = c(1, 1))
+plot.new()
+plot(chess_games_datas$winClassement, chess_games_datas$turns,
+     main = "Classement du vainqueur par rapport au nombre de tours joués",
+     xlab = "Classement du vainqueur", ylab = "Nombre de tours joués",
+     pch = 16, col = "darkblue")
+
+# Calcul de la corrélation
+correlation <- cor(chess_games_datas$winClassement, chess_games_datas$turns)
+
+sample_data <- sample(chess_games_datas$turns, 5000)
+shapiro_test <- shapiro.test(sample_data)
+
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Lors de l'analyse du nuage de points entre le classement du vainqueur et le nombre de tours joués dans la partie, nous constatons une dispersion importante des points et une corrélation faible de ```r correlation```. Cela suggère qu'il n'y a pas de relation linéaire forte entre ces deux variables.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+La faible corrélation indique que le classement du vainqueur ne semble pas être fortement influencé par le nombre de tours joués. En d'autres termes, le nombre de tours ne semble pas être un facteur déterminant dans le résultat du classement du vainqueur.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Il est important de prendre en compte que d'autres facteurs ou variables pourraient influencer le classement du vainqueur dans les parties de jeu d'échecs. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Nous avons effectué un test de normalité de Shapiro-Wilk sur un échantillon aléatoire de 5000 valeurs de la variable winClassement dans notre jeu de données. Les résultats du test indiquent une statistique de test (W) de 0.9885 et une valeur de p très faible (< 2.2e-16).
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Ces résultats suggèrent fortement que l'échantillon ne suit pas une distribution normale. La faible valeur de p indique un rejet de l'hypothèse nulle selon laquelle l'échantillon provient d'une distribution normale.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Les résultats sont identiques pour le nombre de tours. Malgré l'apparence graphique suggérant une distribution gaussienne des variables, les tests statistiques ont révélé que celles-ci ne suivent pas une distribution normale.
+
+```{r, echo=FALSE}
+# Création du modèle de régression linéaire
+model <- lm(turns ~ winClassement, data = chess_games_datas)
+
+# Résumé du modèle
+summary(model)
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Les coefficients du modèle indiquent que l'intercept (constante) est de 41.36 et le coefficient de la variable winClassement est de 0.01168. Les valeurs p associées aux coefficients sont très faibles (< 2e-16), ce qui indique une forte significativité statistique.
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+La statistique t associée au coefficient de winClassement est de 14.40, ce qui suggère une relation significative entre le classement du vainqueur et le nombre de tours joués. La valeur de R carré multiple est de 0.01023, ce qui indique que seulement 1.02% de la variance dans le nombre de tours peut être expliquée par le classement du vainqueur.
